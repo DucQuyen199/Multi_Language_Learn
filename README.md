@@ -1,199 +1,129 @@
-# Multi Language Learn
+<div align="center">
 
-Multi Language Learn is a full-stack language-learning workspace for vocabulary, dictionary lookup, spaced review, grammar, courses, listening, speaking, reading, writing, progress tracking and an AI tutor experience.
+# 🌐 LinguaAtlas
+### *Next-Generation Multi-Language Learning Platform*
 
-The repository is designed to run locally with one Docker Compose command and can be promoted to Kubernetes with the included Kustomize manifests.
+[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0-61dafb?style=flat-square&logo=react)](https://react.dev/)
+[![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go)](https://golang.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?style=flat-square&logo=mysql)](https://mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-8.0-DC382D?style=flat-square&logo=redis)](https://redis.io/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Kustomize-326CE5?style=flat-square&logo=kubernetes)](https://kubernetes.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)](https://docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-## Highlights
+*A full-stack, cloud-native multilingual platform featuring real-time AI Tutoring, Spaced Repetition (SRS), phonetic speech labs, and deep polyglot dictionary streaming across 8 global languages.*
 
-- Learner dashboard with daily progress and review information.
-- Unicode-safe dictionary search and entry details for multilingual content.
-- Save, filter and remove vocabulary items.
-- Flashcard review actions with `again`, `hard`, `good` and `easy` ratings.
-- Grammar and course catalog views.
-- Listening, speaking, reading, writing, AI tutor, progress and notebook workspaces.
-- Responsive UI with keyboard shortcuts, accessible controls, action feedback and light/dark themes.
-- Go REST API with MySQL persistence and Redis caching.
-- Docker Compose development environment and Kubernetes/k9s deployment baseline.
+---
 
-## Technology
+</div>
 
-| Layer | Technology |
-| --- | --- |
-| Web | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
-| Client state/data | TanStack Query, Zustand, Zod |
-| API | Go 1.26, `net/http`, layered handlers/services/repositories |
-| Database | MySQL 8.4 with `utf8mb4` encoding |
-| Cache | Redis 8 |
-| Delivery | Docker, Docker Compose, Kubernetes, Kustomize, k9s |
+## 📌 System Navigation & Live Endpoints
 
-## Quick start with Docker
+| Service / Component | Protocol / Port | Direct Link / Path | Status & Purpose |
+| :--- | :---: | :--- | :--- |
+| **Frontend Web App** | HTTP `3000` | [`http://localhost:3000`](http://localhost:3000) | Main Portal & Showcase UI |
+| **Authentication Form** | HTTP `3000` | [`/login`](http://localhost:3000/login) &middot; [`/register`](http://localhost:3000/register) | Dynamic Polyglot Auth Showcase |
+| **Learner Dashboard** | HTTP `3000` | [`/app/dashboard`](http://localhost:3000/app/dashboard) | Progress Tracking & Stats |
+| **Spaced Repetition (SRS)** | HTTP `3000` | [`/app/flashcards`](http://localhost:3000/app/flashcards) | Active Recall & Flashcard Lab |
+| **AI Language Tutor** | HTTP `3000` | [`/app/ai-tutor`](http://localhost:3000/app/ai-tutor) | Conversational AI Co-pilot |
+| **Multilingual Dictionary** | HTTP `3000` | [`/dictionary`](http://localhost:3000/dictionary) | Unicode-Safe Lexicon Lookup |
+| **Backend REST API** | HTTP `8080` | [`http://localhost:8080`](http://localhost:8080) | Go High-Performance Server |
+| **API Health & Readiness** | HTTP `8080` | [`/healthz`](http://localhost:8080/healthz) &middot; [`/readyz`](http://localhost:8080/readyz) | Liveness / DB & Cache Checks |
+| **MySQL Persistence** | TCP `3306` | `localhost:3306` (`multilanguage`) | UTF-8 / `utf8mb4` Relational Store |
+| **Redis Cache** | TCP `6379` | `localhost:6379` | High-Speed Cache & Session Store |
+| **Kubernetes Cluster** | K8s | `lingua-atlas` namespace | 6 Microservice Pods (HA Deployment) |
 
-### Requirements
+---
 
-- Docker Desktop or Docker Engine with Docker Compose v2.
-- Optional for running services outside Docker: Node.js 20+, npm and Go 1.26.
-- Optional for Kubernetes: `kubectl`, Kustomize and [k9s](https://k9scli.io/).
+## ⚡ Quick Start
 
-Clone and start the complete stack:
+### 1. Docker Compose (Hot Reload Dev Mode)
+
+Run the entire full-stack ecosystem locally with live hot-reloading:
 
 ```bash
+# Clone repository
 git clone https://github.com/DucQuyen199/Multi_Language_Learn.git
 cd Multi_Language_Learn
-docker compose up -d --build
+
+# Start all services with Hot Reload enabled
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Open the application at:
+### 2. Kubernetes & k9s Deployment
 
-- Web app: <http://localhost:3000>
-- API: <http://localhost:8080>
-- API readiness: <http://localhost:8080/readyz>
-
-Useful commands:
+Deploy production-ready manifests via Kustomize:
 
 ```bash
-docker compose ps
-docker compose logs -f backend
-docker compose down
-```
-
-The database and Redis data are stored in Docker volumes. `docker compose down -v` removes those local volumes and should only be used when a clean database is required.
-
-## Configuration
-
-Copy the example environment file when running services directly or when adding local overrides:
-
-```bash
-# macOS/Linux
-cp .env.example .env
-
-# Windows PowerShell
-Copy-Item .env.example .env
-```
-
-Provider keys for AI, speech-to-text, text-to-speech and pronunciation services are optional. They are read server-side only. Never commit `.env` or real credentials; use a secret manager in shared environments.
-
-The local seed data and API responses use UTF-8/`utf8mb4` so Vietnamese, Chinese and other multilingual text remains readable. If an existing MySQL volume predates the current migrations, apply the repair migration before testing old data:
-
-```bash
-docker compose exec -T mysql mysql -uroot -proot multilanguage < backend/migrations/003_repair_utf8_mojibake.sql
-docker compose restart backend frontend
-```
-
-## Run services without Docker
-
-Start MySQL and Redis separately, then configure `.env` with host-local connection values.
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Backend:
-
-```bash
-cd backend
-go run ./cmd/api
-```
-
-For a production-style frontend process:
-
-```bash
-cd frontend
-npm run build
-npm run start
-```
-
-## API foundation
-
-The local API exposes the following working endpoints:
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/healthz` | Liveness check |
-| `GET` | `/readyz` | MySQL and Redis readiness check |
-| `POST` | `/api/auth/register` | Create an account and start a session |
-| `POST` | `/api/auth/login` | Sign in and start a session |
-| `GET` | `/api/auth/google/start` | Start Google OAuth in the browser |
-| `GET` | `/api/auth/google/callback` | Complete Google OAuth and start a session |
-| `POST` | `/api/auth/refresh` | Rotate the refresh session |
-| `POST` | `/api/auth/logout` | End the current session |
-| `GET` | `/api/auth/me` | Return the authenticated account |
-| `GET` | `/api/dictionary/search?q=&language=` | Cached dictionary search |
-| `GET` | `/api/dictionary/:language/:slug` | Dictionary entry details |
-| `GET` | `/api/vocabulary` | List vocabulary for the authenticated account |
-| `POST` | `/api/vocabulary` | Save a vocabulary entry |
-| `DELETE` | `/api/vocabulary/:entry_id` | Remove a vocabulary entry from the authenticated account |
-| `GET` | `/api/dashboard?language=` | Dashboard summary for the authenticated account |
-| `GET` | `/api/grammar` | Grammar catalog |
-| `GET` | `/api/courses` | Course catalog |
-| `POST` | `/api/review/:id` | Save a spaced-review result |
-
-See the complete API notes in [`docs/api.md`](docs/api.md).
-
-## Kubernetes and k9s
-
-The manifests in [`infra/k8s`](infra/k8s) provide a development/early-production baseline:
-
-```bash
+# Apply all manifests to 'lingua-atlas' namespace
 kubectl apply -k infra/k8s
-kubectl -n lingua-atlas get pods
+
+# Verify pods status & monitor with k9s
+kubectl get pods -n lingua-atlas
 k9s -n lingua-atlas
 ```
 
-Before a production rollout, replace placeholder images and development secrets, configure ingress/TLS, backups, resource limits, observability and an explicit migration job. A managed MySQL and Redis service is recommended for high availability. See [`infra/k8s/README.md`](infra/k8s/README.md).
-
-## Quality checks
-
-Run the checks before opening a pull request:
+### 3. Local Native Development
 
 ```bash
-# Frontend
-cd frontend
-npm run lint
-npx tsc --noEmit
-npm run build
+# Backend (Go 1.26)
+cd backend && go run ./cmd/api
 
-# Backend
-cd ../backend
-go test ./...
+# Frontend (Next.js 16 + React 19)
+cd frontend && npm install && npm run dev
+```
 
-# Repository/deployment validation
-cd ..
-docker compose config --quiet
+---
+
+## 🏗️ Architecture & Core Modules
+
+```
+multi-language/
+├── backend/                  # Go 1.26 Clean Architecture API
+│   ├── cmd/api/              # HTTP Server Entrypoint
+│   ├── internal/
+│   │   ├── auth/             # Session & Identity Management (OAuth, JWT)
+│   │   ├── dictionary/       # Multi-language Lexicon Service
+│   │   ├── vocabulary/       # User Wordbank & Spaced Repetition (SRS)
+│   │   └── dashboard/        # Learner Metrics & Summary Engine
+│   └── migrations/           # Versioned MySQL Schemas (001 - 005)
+├── frontend/                 # Next.js 16 (App Router) + Tailwind CSS v4
+│   ├── app/                  # Route Handlers & Pages (/login, /app, /dictionary)
+│   ├── components/           # UI Components (Logo, AuthForm, AppShell, ThemeToggle)
+│   └── lib/                  # Auth Context, API Client & State Hooks
+├── infra/k8s/                # Kubernetes Kustomize Baseline (Deployment, Secrets, PVC)
+└── docs/                     # Technical Specifications & Architecture Docs
+```
+
+---
+
+## 📚 Technical Documentation
+
+- 📐 [**System Architecture**](docs/architecture.md) — Layered design, dependency graph, and network topology.
+- 🔐 [**Authentication Flow**](docs/auth-flow.md) — Dual-token lifecycle, Google OAuth 2.0, and RBAC sessions.
+- 🔌 [**API Specifications**](docs/api.md) — Complete endpoint reference with payload examples.
+- 🗄️ [**Entity Relationship Diagram (ERD)**](docs/erd.md) — Database models and table relations.
+- ☸️ [**Kubernetes Deployment Guide**](infra/k8s/README.md) — Cluster configuration, scaling, and secret management.
+
+---
+
+## 🧪 Quality & Validation
+
+```bash
+# Frontend Lint & Production Typecheck
+cd frontend && npm run lint && npm run build
+
+# Backend Unit & Integration Tests
+cd backend && go test ./...
+
+# Infrastructure Manifest Validation
 kubectl kustomize infra/k8s
 ```
 
-## Repository map
+---
 
-```text
-backend/       Go API, repositories, services and database migrations
-frontend/      Next.js web application
-docs/          Architecture, API, ERD, flows and product documentation
-infra/k8s/     Kubernetes manifests and k9s quick start
-docker-compose.yml
-.env.example
-```
+## 📄 License
 
-Useful documentation:
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
-- [`docs/architecture.md`](docs/architecture.md)
-- [`docs/erd.md`](docs/erd.md)
-- [`docs/learning-data-model.md`](docs/learning-data-model.md)
-- [`docs/auth-flow.md`](docs/auth-flow.md)
-- [`docs/roadmap.md`](docs/roadmap.md)
-
-## Contributing
-
-Bug reports, improvements and pull requests are welcome. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before making a change. Every contribution should preserve UTF-8 correctness, keep user-facing actions functional, add or update tests where appropriate and pass the quality checks above.
-
-## Code of Conduct
-
-Participation in this project is governed by [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Please use the repository's GitHub contact channels to report unacceptable behavior.
-
-## License
-
-This project is released under the [MIT License](LICENSE).
