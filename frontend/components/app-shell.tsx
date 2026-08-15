@@ -14,13 +14,13 @@ import {
   Headphones,
   LayoutDashboard,
   Library,
+  LogOut,
   Menu,
   Mic2,
   NotebookPen,
   PencilLine,
   Search,
   Settings,
-  Sparkles,
   StretchHorizontal,
   X,
 } from "lucide-react";
@@ -30,6 +30,7 @@ import { useEffect, useState } from "react";
 import { useActionFeedback } from "@/components/action-feedback";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; shortcut?: string };
@@ -64,6 +65,8 @@ function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean;
   );
 }
 
+import { Logo, LogoMark } from "@/components/logo";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -72,6 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [selectedLanguage, setSelectedLanguage] = useState({ code: "en", flag: "🇬🇧", label: "English" });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { notify } = useActionFeedback();
+  const { status: authStatus, user, logout } = useAuth();
   const isActive = (href: string) => href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   const close = () => setMobileOpen(false);
 
@@ -93,14 +97,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [router]);
 
+  useEffect(() => {
+    if (authStatus === "unauthenticated") {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [authStatus, pathname, router]);
+
+  if (authStatus !== "authenticated" || !user) {
+    return (
+      <div className="auth-gate flex flex-col items-center justify-center gap-4 min-h-screen">
+        <LogoMark size="lg" animated={true} />
+        <p className="text-sm font-medium text-slate-500 animate-pulse">
+          {authStatus === "loading" ? "Đang chuẩn bị không gian học tập của bạn…" : "Đang chuyển đến màn hình đăng nhập…"}
+        </p>
+      </div>
+    );
+  }
+
+  const avatarLetter = user.first_name.trim().slice(0, 1).toUpperCase() || "L";
+
   return (
     <div className="app-frame">
       <aside className={cn("app-sidebar", mobileOpen && "app-sidebar-open")}>
-        <div className="sidebar-brand">
-          <Link href="/" className="brand-lockup" onClick={close}>
-            <span className="brand-mark"><Sparkles size={17} /></span>
-            <span><strong>Lingua</strong><small>ATLAS</small></span>
-          </Link>
+        <div className="sidebar-brand flex items-center justify-between">
+          <Logo size="sm" href="/" onClick={close} animated={true} />
           <button type="button" className="sidebar-close icon-button" onClick={close} aria-label="Close navigation"><X size={18} /></button>
         </div>
 
@@ -128,10 +148,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/app/settings" onClick={close} className={cn("nav-link", isActive("/app/settings") && "nav-link-active")}><Settings size={17} /><span>{t("nav.settings")}</span></Link>
           <Link href="/help" onClick={close} className="nav-link"><CircleHelp size={17} /><span>Help center</span></Link>
           <button type="button" className="profile-mini" onClick={() => router.push("/app/settings")} aria-label="Open profile settings">
-            <span className="avatar avatar-small">Q</span>
-            <span><strong>Quyến Nguyễn</strong><small>Academic learner</small></span>
+            <span className="avatar avatar-small">{avatarLetter}</span>
+            <span><strong>{user.first_name}</strong><small>{user.email}</small></span>
             <ChevronDown size={14} />
           </button>
+          <button type="button" className="nav-link nav-link-button auth-signout" onClick={() => { void logout(); close(); }}><LogOut size={17} /><span>Sign out</span></button>
         </div>
       </aside>
 
@@ -141,7 +162,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="app-topbar">
           <button type="button" className="mobile-menu icon-button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
           <button type="button" className="command-trigger" onClick={() => router.push("/dictionary")}><Search size={17} /><span>Search words, lessons, notes…</span><kbd>⌘ K</kbd></button>
-          <div className="topbar-actions"><Link href="/app/progress" className="streak-chip" aria-label="Open progress and streak"><Flame size={16} fill="currentColor" /><span>12</span><small>day streak</small></Link><ThemeToggle /><div className="notification-wrap"><button type="button" className="icon-button notification-button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((value) => !value)}><span className="notification-dot" /><Bell size={17} /></button>{notificationsOpen ? <div className="notification-menu"><strong>Keep your rhythm</strong><p>You have words ready for review.</p><Link href="/app/flashcards" onClick={() => setNotificationsOpen(false)}>Open review queue <span>→</span></Link></div> : null}</div><button type="button" className="avatar avatar-button" onClick={() => router.push("/app/settings")} aria-label="Open profile settings">Q</button></div>
+          <div className="topbar-actions"><Link href="/app/progress" className="streak-chip" aria-label="Open progress and streak"><Flame size={16} fill="currentColor" /><span>12</span><small>day streak</small></Link><ThemeToggle /><div className="notification-wrap"><button type="button" className="icon-button notification-button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((value) => !value)}><span className="notification-dot" /><Bell size={17} /></button>{notificationsOpen ? <div className="notification-menu"><strong>Keep your rhythm</strong><p>You have words ready for review.</p><Link href="/app/flashcards" onClick={() => setNotificationsOpen(false)}>Open review queue <span>→</span></Link></div> : null}</div><button type="button" className="avatar avatar-button" onClick={() => router.push("/app/settings")} aria-label="Open profile settings">{avatarLetter}</button></div>
         </header>
         <div className="app-content">{children}</div>
       </main>

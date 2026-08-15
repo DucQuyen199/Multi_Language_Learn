@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useActionFeedback } from "@/components/action-feedback";
+import { Logo } from "@/components/logo";
 import { Badge, EmptyState, ProgressBar, SectionHeading, cn } from "@/components/ui";
 import { api, type DictionaryEntry, type SearchResult } from "@/lib/api";
 import { t } from "@/lib/i18n";
@@ -95,7 +96,14 @@ export function DictionaryView({ initialWord, initialLanguage = "en" }: { initia
 
   return (
     <div className="dictionary-page page-enter">
-      <div className="dictionary-topbar"><Link href="/" className="brand-lockup"><span className="brand-mark"><Sparkles size={17} /></span><span><strong>Lingua</strong><small>ATLAS</small></span></Link><div className="dictionary-top-links"><Link href="/app/dashboard">Workspace</Link><Link href="/app/ai-tutor">AI Tutor</Link><button type="button" className="icon-button" aria-label="Close dictionary" onClick={() => router.push("/")}><X size={18} /></button></div></div>
+      <div className="dictionary-topbar">
+        <Logo size="sm" href="/" animated={true} />
+        <div className="dictionary-top-links">
+          <Link href="/app/dashboard">Workspace</Link>
+          <Link href="/app/ai-tutor">AI Tutor</Link>
+          <button type="button" className="icon-button" aria-label="Close dictionary" onClick={() => router.push("/")}><X size={18} /></button>
+        </div>
+      </div>
       <div className="dictionary-intro"><div><p className="eyebrow eyebrow-blue">Academic dictionary</p><h1>Find the word<br /><em>behind the idea.</em></h1><p>Meaning, usage, and context — in one calm place.</p></div><div className="dictionary-intro-note"><Lightbulb size={17} /><span>Search a word, phrase, or idiom<br /><small>Try <button type="button" onClick={() => selectWord("development")}>development</button></small></span></div></div>
 
       <div className="dictionary-search-wrap"><div className="dictionary-search"><Search size={20} /><input ref={searchInputRef} value={search} onChange={(event) => { setSearch(event.target.value); if (!event.target.value) setSelectedSlug(""); }} onKeyDown={(event) => { if (event.key === "Enter" && search.trim()) selectWord(search.trim().toLowerCase()); }} placeholder="Search words, phrases or examples…" aria-label="Search dictionary" autoFocus={!initialWord} /><kbd><Keyboard size={13} /> ⌘ K</kbd>{search ? <button type="button" className="clear-search" onClick={() => { setSearch(""); setSelectedSlug(""); }} aria-label="Clear search"><X size={16} /></button> : null}</div><p className="search-hint">Press <strong>Enter</strong> to open a word · <span>English → Vietnamese</span></p></div>

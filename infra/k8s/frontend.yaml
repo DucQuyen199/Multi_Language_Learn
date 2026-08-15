@@ -29,6 +29,7 @@ spec:
       containers:
         - name: frontend
           image: ghcr.io/example/lingua-atlas-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           envFrom:

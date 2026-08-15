@@ -4,8 +4,9 @@ namespace: lingua-atlas
 resources:
   - namespace.yaml
   - configmap.yaml
+  - secret.yaml
   - mysql.yaml
   - redis.yaml
   - backend.yaml
   - frontend.yaml
-# Copy secret.example.yaml to a secret manager or sealed secret before applying.
+

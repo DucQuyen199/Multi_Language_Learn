@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/quyen/multi-language/backend/internal/transport"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/auth"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/transport"
 )
 
 type Handler struct {
@@ -17,9 +18,12 @@ func NewHandler(service *Service, defaultUser string) *Handler {
 }
 
 func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
-	userID := strings.TrimSpace(r.URL.Query().Get("user_id"))
-	if userID == "" {
-		userID = h.defaultUser
+	userID, ok := auth.UserID(r)
+	if !ok {
+		userID = strings.TrimSpace(r.URL.Query().Get("user_id"))
+		if userID == "" {
+			userID = h.defaultUser
+		}
 	}
 	language := strings.TrimSpace(r.URL.Query().Get("language"))
 	if language == "" {

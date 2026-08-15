@@ -63,7 +63,7 @@ Cache failures are non-fatal: the service falls back to MySQL and logs the degra
 - Validate and normalize every request at the handler boundary.
 - Use parameterized SQL only; never concatenate user input into queries.
 - Keep secrets in environment variables; `.env` is ignored by git.
-- Add secure cookie/JWT refresh-token rotation when auth is enabled in Phase 2.
+- Auth now uses short-lived opaque access tokens plus refresh-token rotation in HttpOnly cookies; add email verification and optional OAuth/2FA as later extensions.
 - Restrict CORS with `CORS_ALLOWED_ORIGINS` in non-local environments.
 - Add request IDs, structured logs, health/readiness probes and rate limiting before production exposure.
 

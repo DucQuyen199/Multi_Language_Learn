@@ -10,4 +10,9 @@ data:
   DATABASE_HOST: mysql
   REDIS_URL: redis://redis:6379/0
   CORS_ALLOWED_ORIGINS: https://learn.example.com
+  ALLOW_DEMO_AUTH: "false"
+  AUTH_ACCESS_TTL_SECONDS: "900"
+  AUTH_REFRESH_TTL_DAYS: "30"
+  AUTH_REFRESH_COOKIE: lingua_refresh
+  GOOGLE_REDIRECT_URL: https://learn.example.com/api/auth/google/callback
   BACKEND_URL: http://backend:8080

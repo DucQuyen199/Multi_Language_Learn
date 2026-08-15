@@ -115,12 +115,19 @@ The local API exposes the following working endpoints:
 | --- | --- | --- |
 | `GET` | `/healthz` | Liveness check |
 | `GET` | `/readyz` | MySQL and Redis readiness check |
+| `POST` | `/api/auth/register` | Create an account and start a session |
+| `POST` | `/api/auth/login` | Sign in and start a session |
+| `GET` | `/api/auth/google/start` | Start Google OAuth in the browser |
+| `GET` | `/api/auth/google/callback` | Complete Google OAuth and start a session |
+| `POST` | `/api/auth/refresh` | Rotate the refresh session |
+| `POST` | `/api/auth/logout` | End the current session |
+| `GET` | `/api/auth/me` | Return the authenticated account |
 | `GET` | `/api/dictionary/search?q=&language=` | Cached dictionary search |
 | `GET` | `/api/dictionary/:language/:slug` | Dictionary entry details |
-| `GET` | `/api/vocabulary?user_id=` | List saved vocabulary |
+| `GET` | `/api/vocabulary` | List vocabulary for the authenticated account |
 | `POST` | `/api/vocabulary` | Save a vocabulary entry |
-| `DELETE` | `/api/vocabulary/:entry_id?user_id=` | Remove a vocabulary entry |
-| `GET` | `/api/dashboard?user_id=&language=` | Dashboard summary |
+| `DELETE` | `/api/vocabulary/:entry_id` | Remove a vocabulary entry from the authenticated account |
+| `GET` | `/api/dashboard?language=` | Dashboard summary for the authenticated account |
 | `GET` | `/api/grammar` | Grammar catalog |
 | `GET` | `/api/courses` | Course catalog |
 | `POST` | `/api/review/:id` | Save a spaced-review result |

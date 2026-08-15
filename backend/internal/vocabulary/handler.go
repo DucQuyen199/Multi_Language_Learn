@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/quyen/multi-language/backend/internal/transport"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/auth"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/transport"
 )
 
 type Handler struct {
-	service      *Service
-	defaultUser  string
+	service     *Service
+	defaultUser string
 }
 
 func NewHandler(service *Service, defaultUser string) *Handler {
@@ -20,6 +21,9 @@ func NewHandler(service *Service, defaultUser string) *Handler {
 }
 
 func (h *Handler) userID(r *http.Request) string {
+	if userID, ok := auth.UserID(r); ok {
+		return userID
+	}
 	if value := strings.TrimSpace(r.URL.Query().Get("user_id")); value != "" {
 		return value
 	}
@@ -41,9 +45,7 @@ func (h *Handler) Save(w http.ResponseWriter, r *http.Request) {
 		transport.WriteError(w, http.StatusBadRequest, "INVALID_JSON", "Please send a valid JSON body")
 		return
 	}
-	if input.UserID == "" {
-		input.UserID = h.userID(r)
-	}
+	input.UserID = h.userID(r)
 	if strings.TrimSpace(input.EntryID) == "" {
 		transport.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "entry_id is required")
 		return

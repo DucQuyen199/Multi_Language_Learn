@@ -31,20 +31,24 @@ Errors use:
 | --- | --- | --- |
 | GET | `/healthz` | liveness |
 | GET | `/readyz` | MySQL/Redis readiness |
+| POST | `/api/auth/register` | Create an account and start a session |
+| POST | `/api/auth/login` | Sign in and start a session |
+| GET | `/api/auth/google/start` | Start Google OAuth in the browser |
+| GET | `/api/auth/google/callback` | Validate Google OAuth and create the session |
+| POST | `/api/auth/refresh` | Rotate the refresh cookie and issue a new access token |
+| POST | `/api/auth/logout` | Revoke the current session |
+| GET | `/api/auth/me` | Return the authenticated account |
 | GET | `/api/dictionary/search?q=&language=` | cached dictionary search |
 | GET | `/api/dictionary/:language/:slug` | cached dictionary detail |
-| GET | `/api/vocabulary?user_id=` | saved vocabulary |
+| GET | `/api/vocabulary` | saved vocabulary for the authenticated account |
 | POST | `/api/vocabulary` | save a dictionary entry |
-| DELETE | `/api/vocabulary/:entry_id?user_id=` | unsave an entry |
-| GET | `/api/dashboard?user_id=&language=` | learner summary |
+| DELETE | `/api/vocabulary/:entry_id` | unsave an entry from the authenticated account |
+| GET | `/api/dashboard?language=` | learner summary for the authenticated account |
 | POST | `/api/review/:id` | review event boundary |
 
 ## Planned module endpoints
 
 ```text
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/refresh
 GET  /api/grammar?level=B1
 GET  /api/courses
 GET  /api/listening?level=B1

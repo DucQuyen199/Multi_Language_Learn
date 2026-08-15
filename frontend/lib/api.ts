@@ -5,6 +5,32 @@ export type ApiEnvelope<T> = {
   error?: { code: string; message: string };
 };
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  first_name: string;
+  role: string;
+  email_verified: boolean;
+};
+
+export type AuthSession = {
+  user: AuthUser;
+  access_token: string;
+  expires_in: number;
+};
+
+export class ApiError extends Error {
+  status: number;
+  code: string;
+
+  constructor(message: string, status: number, code = "API_ERROR") {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export type SearchResult = {
   id: string;
   language_code: string;
@@ -75,20 +101,75 @@ export type DashboardSummary = {
 export type GrammarTopic = { id: string; slug: string; title: string; cefr: string; summary: string };
 export type Course = { id: string; slug: string; title: string; description: string; cefr: string; lesson_count: number; duration_minutes: number };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+let accessToken: string | null = null;
+let refreshPromise: Promise<AuthSession | null> | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function clearAccessToken() {
+  accessToken = null;
+}
+
+export async function refreshSession(): Promise<AuthSession | null> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      });
+      const payload = (await response.json()) as ApiEnvelope<AuthSession>;
+      if (!response.ok || !payload.success || !payload.data?.access_token) {
+        clearAccessToken();
+        return null;
+      }
+      setAccessToken(payload.data.access_token);
+      return payload.data;
+    } catch {
+      clearAccessToken();
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
+async function request<T>(path: string, init?: RequestInit, retryOnUnauthorized = true): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Content-Type", "application/json");
+  if (accessToken && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${accessToken}`);
+
   const response = await fetch(path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers,
+    credentials: "include",
     cache: "no-store",
   });
   const payload = (await response.json()) as ApiEnvelope<T>;
+  if (response.status === 401 && retryOnUnauthorized && !path.startsWith("/api/auth/")) {
+    const session = await refreshSession();
+    if (session) return request(path, init, false);
+  }
   if (!response.ok || !payload.success) {
-    throw new Error(payload.error?.message ?? "Something went wrong. Try again.");
+    throw new ApiError(payload.error?.message ?? "Something went wrong. Try again.", response.status, payload.error?.code);
   }
   return payload.data;
 }
 
 export const api = {
+  auth: {
+    register: (input: { email: string; password: string; first_name?: string }) =>
+      request<AuthSession>("/api/auth/register", { method: "POST", body: JSON.stringify(input) }),
+    login: (input: { email: string; password: string }) =>
+      request<AuthSession>("/api/auth/login", { method: "POST", body: JSON.stringify(input) }),
+    logout: () => request<{ logged_out: boolean }>("/api/auth/logout", { method: "POST" }),
+    me: () => request<AuthUser>("/api/auth/me"),
+  },
   search: (query: string, language = "en") =>
     request<SearchResult[]>(`/api/dictionary/search?q=${encodeURIComponent(query)}&language=${language}`),
   entry: (language: string, slug: string) => request<DictionaryEntry>(`/api/dictionary/${language}/${slug}`),

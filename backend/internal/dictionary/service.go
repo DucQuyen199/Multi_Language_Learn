@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quyen/multi-language/backend/internal/platform"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/platform"
 )
 
 var ErrNotFound = errors.New("dictionary entry not found")

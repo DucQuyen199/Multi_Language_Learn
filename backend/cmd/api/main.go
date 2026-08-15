@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/quyen/multi-language/backend/internal/config"
-	"github.com/quyen/multi-language/backend/internal/httpapi"
-	"github.com/quyen/multi-language/backend/internal/platform"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/config"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/httpapi"
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/platform"
 )
 
 func main() {

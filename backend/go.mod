@@ -1,10 +1,11 @@
-module github.com/quyen/multi-language/backend
+module github.com/ducquyen199/Multi_Language_Learn/backend
 
 go 1.26
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/redis/go-redis/v9 v9.17.2
+	golang.org/x/crypto v0.41.0
 )
 
 require (

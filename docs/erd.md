@@ -8,6 +8,9 @@ The user requirement chooses MySQL, so the schema uses MySQL 8.4-compatible SQL.
 erDiagram
   users ||--o| user_profiles : has
   users ||--o{ user_languages : studies
+  users ||--o{ auth_access_tokens : authenticates
+  users ||--o{ auth_refresh_tokens : refreshes
+  users ||--o{ auth_identities : links
   languages ||--o{ user_languages : enables
   languages ||--o{ dictionary_entries : owns
   dictionary_entries ||--o{ word_meanings : contains
@@ -26,6 +29,9 @@ erDiagram
 | Table | Purpose | Important indexes |
 | --- | --- | --- |
 | `users` | identity and auth subject | unique email |
+| `auth_access_tokens` | short-lived hashed bearer sessions | token hash, expiry |
+| `auth_refresh_tokens` | rotated HttpOnly refresh sessions and token families | token hash, family, expiry |
+| `auth_identities` | external login identities such as Google | provider/subject, user/provider |
 | `user_profiles` | native language, goals and display data | user unique |
 | `languages` | supported language registry | unique code |
 | `user_languages` | one user’s independent target-language progress | user/language unique |
