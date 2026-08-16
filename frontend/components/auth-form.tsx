@@ -24,7 +24,7 @@ import {
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/components/ui";
-import { ApiError } from "@/lib/api";
+import { ApiError, workspacePathForRole } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 type AuthMode = "login" | "register";
@@ -521,16 +521,17 @@ export function AuthForm({ mode: initialMode }: { mode: AuthMode }) {
 
     setSubmitting(true);
     try {
+      let user;
       if (isRegister) {
-        await register(email, password, firstName.trim());
+        user = await register(email, password, firstName.trim());
         setSuccessMessage("Tạo tài khoản thành công! Đang chuyển tiếp…");
       } else {
-        await login(email, password);
-        setSuccessMessage("Đăng nhập thành công! Đang mở không gian học…");
+        user = await login(email, password);
+        setSuccessMessage("Đăng nhập thành công! Đang mở không gian làm việc…");
       }
 
       const next = searchParams.get("next");
-      const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/app/dashboard";
+      const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : workspacePathForRole(user.role);
       setTimeout(() => {
         router.replace(destination);
       }, 350);

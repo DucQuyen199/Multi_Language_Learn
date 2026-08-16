@@ -25,6 +25,10 @@
 | **Frontend Web App** | HTTP `3000` | [`http://localhost:3000`](http://localhost:3000) | Main Portal & Showcase UI |
 | **Authentication Form** | HTTP `3000` | [`/login`](http://localhost:3000/login) &middot; [`/register`](http://localhost:3000/register) | Dynamic Polyglot Auth Showcase |
 | **Learner Dashboard** | HTTP `3000` | [`/app/dashboard`](http://localhost:3000/app/dashboard) | Progress Tracking & Stats |
+| **Course Library & Enroll** | HTTP `3000` | [`/app/courses`](http://localhost:3000/app/courses) | Browse paths, enroll, track progress |
+| **Lesson Study Player** | HTTP `3000` | [`/app/lessons/:id`](http://localhost:3000/app/courses) | Markdown-lite lessons, complete for XP |
+| **Instructor Studio** | HTTP `3000` | [`/instructor`](http://localhost:3000/instructor) | Author courses & lessons, follow students |
+| **Admin Console** | HTTP `3000` | [`/admin`](http://localhost:3000/admin) | Platform metrics, users, catalog, languages |
 | **Spaced Repetition (SRS)** | HTTP `3000` | [`/app/flashcards`](http://localhost:3000/app/flashcards) | Active Recall & Flashcard Lab |
 | **AI Language Tutor** | HTTP `3000` | [`/app/ai-tutor`](http://localhost:3000/app/ai-tutor) | Conversational AI Co-pilot |
 | **Multilingual Dictionary** | HTTP `3000` | [`/dictionary`](http://localhost:3000/dictionary) | Unicode-Safe Lexicon Lookup |
@@ -33,6 +37,49 @@
 | **MySQL Persistence** | TCP `3306` | `localhost:3306` (`multilanguage`) | UTF-8 / `utf8mb4` Relational Store |
 | **Redis Cache** | TCP `6379` | `localhost:6379` | High-Speed Cache & Session Store |
 | **Kubernetes Cluster** | K8s | `lingua-atlas` namespace | 6 Microservice Pods (HA Deployment) |
+
+## 👥 Roles & Demo Accounts
+
+Three first-class roles share one platform, each with its own workspace shell:
+
+| Role | Workspace | Capabilities |
+| :--- | :--- | :--- |
+| **Learner** (`student`) | `/app` | Study courses & lessons, enroll/unenroll, earn XP, SRS flashcards, dictionary, AI tutor |
+| **Instructor** (`instructor`) | `/instructor` | Create courses, author & publish lessons, view per-student progress |
+| **Admin** (`admin`) | `/admin` | Platform metrics, promote/demote/remove accounts, publish/archive courses, toggle languages |
+
+Seeded demo accounts (fresh database via `docker compose up`):
+
+| Email | Password | Role |
+| :--- | :--- | :--- |
+| `admin@gmail.com` | `@Admin123` | Admin |
+| `admin@lingua.dev` | `Admin1234` | Admin |
+| `minh.anh@lingua.dev` | `Teacher1234` | Instructor |
+| `sofia.reyes@lingua.dev` | `Teacher1234` | Instructor |
+| `learner@example.com` | `Learner1234` | Learner |
+| `linh@example.com` | `Learner1234` | Learner |
+
+After sign-in you land in the workspace matching your role, and role switcher chips let admins/instructors jump between Learning, Studio, and Admin.
+
+## 🛡️ Security Controls
+
+The platform is hardened against the common OWASP Top 10 failure modes:
+
+| Threat | Control |
+| :--- | :--- |
+| Brute force / credential stuffing | Sliding-window rate limits: 20 attempts / 5 min per source IP, 5 failures / 15 min per account, reset on success (`429 TOO_MANY_ATTEMPTS`) |
+| Account enumeration (timing) | Unknown emails still run a full bcrypt comparison, so latency cannot reveal whether an account exists |
+| Broken access control | Role middleware (`withRole`) + per-record ownership filters for instructors; roles are re-read from the database on every request; self-modification and last-admin removal are blocked |
+| SQL injection | 100% parameterized queries; admin search additionally escapes LIKE wildcards (`%`, `_`) |
+| XSS | React auto-escaping, no `dangerousSetInnerHTML`; lesson `video_url` only accepts `http(s)` URLs (`javascript:`/`data:` rejected); strict CSP on both API and web app |
+| CSRF | State changes require a Bearer access token; the refresh cookie is `HttpOnly` + `SameSite=Lax` and only `POST /api/auth/refresh` reads it |
+| Session theft / replay | Access + refresh tokens are 32-byte random values stored only as SHA-256 hashes; refresh rotation revokes the whole token family on anomaly; soft-deleting a user revokes their tokens immediately |
+| Clickjacking / sniffing / referrer leaks | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS in production, `Cache-Control: no-store` on `/api/*` |
+| Mass assignment | JSON decoders reject unknown fields and cap request body size |
+| Dependency risk | `go test` security unit tests, `npm audit` (0 production vulnerabilities), `govulncheck` (0 reachable vulnerabilities) |
+| Monitoring | Structured `auth_event` logs: `login_success`, `login_failed`, `rate_limited`, `register_success` |
+
+Known trade-offs: register replies `409 EMAIL_EXISTS` (usability over obscurity), and the in-memory rate limiter is per-instance — move the counters to Redis before running multiple API replicas.
 
 ---
 
@@ -83,14 +130,17 @@ multi-language/
 ├── backend/                  # Go 1.26 Clean Architecture API
 │   ├── cmd/api/              # HTTP Server Entrypoint
 │   ├── internal/
-│   │   ├── auth/             # Session & Identity Management (OAuth, JWT)
+│   │   ├── auth/             # Sessions, identities & RBAC roles (student/instructor/admin)
+│   │   ├── admin/            # Admin console: metrics, user & catalog governance
+│   │   ├── instructor/       # Studio: course authoring, lesson CRUD, student progress
+│   │   ├── learning/         # Learner path: enrollments, lessons, completions & XP
 │   │   ├── dictionary/       # Multi-language Lexicon Service
 │   │   ├── vocabulary/       # User Wordbank & Spaced Repetition (SRS)
 │   │   └── dashboard/        # Learner Metrics & Summary Engine
-│   └── migrations/           # Versioned MySQL Schemas (001 - 005)
+│   └── migrations/           # Versioned MySQL Schemas (001 - 006)
 ├── frontend/                 # Next.js 16 (App Router) + Tailwind CSS v4
-│   ├── app/                  # Route Handlers & Pages (/login, /app, /dictionary)
-│   ├── components/           # UI Components (Logo, AuthForm, AppShell, ThemeToggle)
+│   ├── app/                  # Routes: /login, /app (learner), /instructor, /admin, /dictionary
+│   ├── components/           # UI: AppShell, WorkspaceShell, role views, shared design system
 │   └── lib/                  # Auth Context, API Client & State Hooks
 ├── infra/k8s/                # Kubernetes Kustomize Baseline (Deployment, Secrets, PVC)
 └── docs/                     # Technical Specifications & Architecture Docs

@@ -14,11 +14,18 @@ import (
 	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/ducquyen199/Multi_Language_Learn/backend/internal/platform"
 )
 
 const (
 	minimumPasswordLength = 8
 	maximumPasswordLength = 72
+
+	// timingEqualizer is a valid bcrypt digest of a random secret. When the
+	// email is unknown we still run one full bcrypt comparison so response
+	// latency cannot reveal whether an account exists.
+	timingEqualizer = "$2a$10$pgZ3Sob7xRhDqaSH6dTMPuW37kYWus8Z1iYDVXmeB9tGEZWYgSHWC"
 )
 
 type Service struct {
@@ -60,6 +67,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (Session, error) 
 	}
 	user, err := s.repo.FindByEmail(ctx, email)
 	if errors.Is(err, sql.ErrNoRows) {
+		_ = bcrypt.CompareHashAndPassword([]byte(timingEqualizer), []byte(input.Password))
 		return Session{}, ErrInvalidCredentials
 	}
 	if err != nil {
@@ -243,7 +251,7 @@ func validateRegistration(input RegisterInput) (string, string, error) {
 	if !hasPasswordVariety(input.Password) {
 		return "", "", errors.New("password must contain a letter and a number")
 	}
-	firstName := strings.TrimSpace(input.FirstName)
+	firstName := platform.SanitizeLine(input.FirstName)
 	if firstName == "" {
 		firstName = "Learner"
 	}

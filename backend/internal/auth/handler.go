@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -37,9 +38,12 @@ type Handler struct {
 	googleRedirectURL  string
 	googleStateCookie  string
 	httpClient         *http.Client
+	logger             *slog.Logger
+	ipLimiter          *attemptLimiter
+	accountLimiter     *attemptLimiter
 }
 
-func NewHandler(service *Service, cookieName string, secureCookie bool, refreshTTL time.Duration, googleConfigs ...GoogleConfig) *Handler {
+func NewHandler(service *Service, cookieName string, secureCookie bool, refreshTTL time.Duration, logger *slog.Logger, googleConfigs ...GoogleConfig) *Handler {
 	if strings.TrimSpace(cookieName) == "" {
 		cookieName = "lingua_refresh"
 	}
@@ -60,7 +64,53 @@ func NewHandler(service *Service, cookieName string, secureCookie bool, refreshT
 		googleRedirectURL:  strings.TrimSpace(google.RedirectURL),
 		googleStateCookie:  "lingua_google_state",
 		httpClient:         &http.Client{Timeout: 10 * time.Second},
+		logger:             logger,
+		// 20 attempts / 5 min per source IP absorbs NAT classrooms while
+		// stopping brute force; 5 failures / 15 min per account protects a
+		// targeted credential from sustained guessing.
+		ipLimiter:      newAttemptLimiter(20, 5*time.Minute),
+		accountLimiter: newAttemptLimiter(5, 15*time.Minute),
 	}
+}
+
+func (h *Handler) logEvent(event string, details ...any) {
+	if h.logger != nil {
+		h.logger.Info("auth_event", append([]any{"event", event}, details...)...)
+	}
+}
+
+// isMobileClient reports whether the caller is a native app. Mobile clients
+// store the rotating refresh token in device secure storage instead of
+// relying on HttpOnly cookies, so responses include it in the JSON body.
+func isMobileClient(r *http.Request) bool {
+	return strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Client-Type")), "mobile")
+}
+
+// decodeRefreshBody reads an optional {"refresh_token": "..."} JSON body sent
+// by mobile clients. Missing or invalid bodies simply yield an empty token.
+func decodeRefreshBody(r *http.Request) string {
+	if r.Body == nil {
+		return ""
+	}
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	_ = json.NewDecoder(io.LimitReader(r.Body, 4<<10)).Decode(&input)
+	return strings.TrimSpace(input.RefreshToken)
+}
+
+func (h *Handler) writeSession(w http.ResponseWriter, r *http.Request, status int, session Session) {
+	h.setRefreshCookie(w, session.refreshToken)
+	if isMobileClient(r) {
+		session.RefreshToken = session.refreshToken
+	}
+	transport.WriteJSON(w, status, session)
+}
+
+// tooManyAttempts reports 429 and logs the throttle for monitoring.
+func (h *Handler) tooManyAttempts(w http.ResponseWriter, scope string) {
+	h.logEvent("rate_limited", "scope", scope)
+	transport.WriteError(w, http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "Too many attempts. Please wait a few minutes and try again.")
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -68,13 +118,17 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := decodeJSON(w, r, &input); err != nil {
 		return
 	}
+	if !h.ipLimiter.allow("register:"+requestIP(r), time.Now().UTC()) {
+		h.tooManyAttempts(w, "register")
+		return
+	}
 	session, err := h.service.Register(r.Context(), input)
 	if err != nil {
 		h.writeServiceError(w, err)
 		return
 	}
-	h.setRefreshCookie(w, session.refreshToken)
-	transport.WriteJSON(w, http.StatusCreated, session)
+	h.logEvent("register_success", "user_id", session.User.ID)
+	h.writeSession(w, r, http.StatusCreated, session)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -82,13 +136,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if err := decodeJSON(w, r, &input); err != nil {
 		return
 	}
+	now := time.Now().UTC()
+	ipKey := "login-ip:" + requestIP(r)
+	if !h.ipLimiter.allow(ipKey, now) {
+		h.tooManyAttempts(w, "login_ip")
+		return
+	}
+	accountKey := "login-account:" + strings.ToLower(strings.TrimSpace(input.Email))
+	if !h.accountLimiter.allow(accountKey, now) {
+		h.tooManyAttempts(w, "login_account")
+		return
+	}
 	session, err := h.service.Login(r.Context(), input)
 	if err != nil {
+		h.logEvent("login_failed", "email", strings.ToLower(strings.TrimSpace(input.Email)), "reason", "invalid_credentials")
 		h.writeServiceError(w, err)
 		return
 	}
-	h.setRefreshCookie(w, session.refreshToken)
-	transport.WriteJSON(w, http.StatusOK, session)
+	h.accountLimiter.reset(accountKey)
+	h.logEvent("login_success", "user_id", session.User.ID, "role", session.User.Role)
+	h.writeSession(w, r, http.StatusOK, session)
 }
 
 func (h *Handler) GoogleStart(w http.ResponseWriter, r *http.Request) {
@@ -167,25 +234,34 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(h.cookieName)
-	if err != nil || strings.TrimSpace(cookie.Value) == "" {
+	refreshToken := ""
+	if cookie, err := r.Cookie(h.cookieName); err == nil {
+		refreshToken = strings.TrimSpace(cookie.Value)
+	}
+	if refreshToken == "" {
+		// Native apps pass the rotating refresh token in the JSON body.
+		refreshToken = decodeRefreshBody(r)
+	}
+	if refreshToken == "" {
 		transport.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Your session has expired. Please sign in again.")
 		return
 	}
-	session, err := h.service.Refresh(r.Context(), cookie.Value)
+	session, err := h.service.Refresh(r.Context(), refreshToken)
 	if err != nil {
 		h.clearRefreshCookie(w)
 		h.writeServiceError(w, err)
 		return
 	}
-	h.setRefreshCookie(w, session.refreshToken)
-	transport.WriteJSON(w, http.StatusOK, session)
+	h.writeSession(w, r, http.StatusOK, session)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	var refreshToken string
+	refreshToken := ""
 	if cookie, err := r.Cookie(h.cookieName); err == nil {
-		refreshToken = cookie.Value
+		refreshToken = strings.TrimSpace(cookie.Value)
+	}
+	if refreshToken == "" {
+		refreshToken = decodeRefreshBody(r)
 	}
 	if err := h.service.Logout(r.Context(), refreshToken, AccessToken(r)); err != nil {
 		transport.WriteError(w, http.StatusInternalServerError, "LOGOUT_FAILED", "Unable to end this session")

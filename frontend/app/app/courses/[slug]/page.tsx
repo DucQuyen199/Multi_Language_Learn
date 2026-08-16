@@ -1,6 +1,6 @@
-import { LessonDetailView } from "@/components/lesson-detail-view";
+import { CourseDetailView } from "@/components/course-detail-view";
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <LessonDetailView kind="course" slug={slug} />;
+  return <CourseDetailView slug={slug} />;
 }

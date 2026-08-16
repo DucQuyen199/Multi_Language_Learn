@@ -1,12 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BookA, BookOpen, CheckCircle2, Clock3, GraduationCap, Layers3, Search, Sparkles } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, BookA, BookOpen, CheckCircle2, Circle, Clock3, GraduationCap, Layers3, Search, Sparkles, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useActionFeedback } from "@/components/action-feedback";
-import { Badge, EmptyState, SectionHeading, Skeleton, cn } from "@/components/ui";
-import { api } from "@/lib/api";
+import { Badge, EmptyState, ProgressBar, SectionHeading, Skeleton, cn } from "@/components/ui";
+import { api, type CourseCard } from "@/lib/api";
 
 export function GrammarView() {
   const [level, setLevel] = useState("");
@@ -18,20 +18,177 @@ export function GrammarView() {
 }
 
 export function CoursesView() {
-  const query = useQuery({ queryKey: ["courses"], queryFn: api.courses });
-  const [filter, setFilter] = useState("All paths");
+  const queryClient = useQueryClient();
   const { notify } = useActionFeedback();
-  if (query.isLoading) return <CatalogSkeleton />;
-  if (query.isError) return <div className="state-page"><EmptyState icon={GraduationCap} title="Courses are offline" description={query.error.message}><button type="button" className="button button-primary" onClick={() => query.refetch()}>Try again</button></EmptyState></div>;
-  const courses = query.data ?? [];
-  const visibleCourses = courses.filter((course) => filter === "All paths" || (filter === "English" && course.title.startsWith("English")) || (filter === "Academic" && course.title.startsWith("Academic")));
-  const chooseFilter = (value: string) => {
-    setFilter(value);
-    if (value === "Business") notify("No business path is seeded yet. Showing the available paths.", "info");
-  };
-  return <div className="workspace-page page-enter"><div className="page-header"><div><p className="eyebrow eyebrow-purple">Course library</p><h1>Choose a path with <em>purpose.</em></h1><p className="page-lede">Each course threads vocabulary, grammar, and all four skills into one coherent journey.</p></div><button type="button" className="button button-secondary" onClick={() => { setFilter("All paths"); document.querySelector(".course-grid")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><Search size={16} /> Browse all</button></div><div className="course-filter-row">{["All paths", "English", "Academic", "Business"].map((item) => <button type="button" className={cn("course-pill", filter === item && "course-pill-active")} onClick={() => chooseFilter(item)} key={item}>{item}</button>)}<span className="course-filter-note">{visibleCourses.length} paths ready for you</span></div>{visibleCourses.length ? <div className="course-grid">{visibleCourses.map((course, index) => <article className={cn("course-card", index % 2 ? "course-card-lilac" : "course-card-blue")} key={course.id}><div className="course-card-top"><Badge tone={index % 2 ? "purple" : "blue"}>{course.cefr}</Badge><span className="course-progress-label">{index === 0 && filter === "All paths" ? "32% complete" : "New path"}</span></div><div className="course-illustration"><div className="course-orb" /><Layers3 size={36} strokeWidth={1.3} /></div><h2>{course.title}</h2><p>{course.description}</p><div className="course-meta"><span><BookOpen size={14} /> {course.lesson_count} lessons</span><span><Clock3 size={14} /> {Math.round(course.duration_minutes / 60)} hours</span></div><div className="course-card-footer"><div className="course-avatar-stack"><span>Q</span><span>+</span></div><Link href={`/app/courses/${course.slug}`} className="button button-dark">View path <ArrowRight size={15} /></Link></div></article>)}</div> : <EmptyState icon={Search} title="No path in this filter" description="Choose another path to continue learning." action={<button type="button" className="button button-secondary" onClick={() => setFilter("All paths")}>Show all paths</button>} />}<SectionHeading eyebrow="How it works" title="One path, four skills" description="Every unit moves from noticing to practice to review." /><div className="course-flow"><span><BookOpen size={17} /> Learn</span><ArrowRight size={15} /><span><CheckCircle2 size={17} /> Practice</span><ArrowRight size={15} /><span><Sparkles size={17} /> Reflect</span><ArrowRight size={15} /><span><GraduationCap size={17} /> Progress</span></div></div>;
+  const [enrolling, setEnrolling] = useState<string | null>(null);
+
+  const coursesQuery = useQuery({ queryKey: ["courses"], queryFn: () => api.courses() });
+  const mineQuery = useQuery({ queryKey: ["enrollments"], queryFn: api.myCourses });
+
+  const enrollMutation = useMutation({
+    mutationFn: (courseId: string) => api.enroll(courseId),
+    onSuccess: (course) => {
+      notify(`You are enrolled in “${course.title}”. Chúc mừng!`);
+      void queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      void queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+    onError: (error: Error) => notify(error.message, "error"),
+    onSettled: () => setEnrolling(null),
+  });
+
+  if (coursesQuery.isLoading) return <CatalogSkeleton />;
+  if (coursesQuery.isError) {
+    return (
+      <div className="state-page">
+        <EmptyState icon={GraduationCap} title="Courses are offline" description={coursesQuery.error.message}>
+          <button type="button" className="button button-primary" onClick={() => coursesQuery.refetch()}>Try again</button>
+        </EmptyState>
+      </div>
+    );
+  }
+
+  const courses = coursesQuery.data ?? [];
+  const mine = mineQuery.data ?? [];
+  const catalog = courses.filter((course) => !course.is_enrolled);
+
+  return (
+    <div className="workspace-page page-enter">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow eyebrow-purple">Course library</p>
+          <h1>Choose a path with <em>purpose.</em></h1>
+          <p className="page-lede">Mỗi khóa học là một hành trình gắn kết từ vựng, ngữ pháp và cả bốn kỹ năng.</p>
+        </div>
+      </div>
+
+      {mine.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Continue learning" title="My paths" description="Các khóa học bạn đã đăng ký — tiếp tục ngay nơi bạn dừng lại." />
+          <div className="course-grid" style={{ marginBottom: 34 }}>
+            {mine.map((course, index) => (
+              <CourseCardTile course={course} index={index} enrolled={true} onEnroll={undefined} enrolling={false} />
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      <SectionHeading eyebrow="Catalog" title="Open paths" description={`${catalog.length} khóa học đang mở rộng cho bạn.`} />
+      {catalog.length === 0 ? (
+        <EmptyState icon={CheckCircle2} title="You joined everything" description="Bạn đã đăng ký mọi khóa học đang mở. Hãy học hết và quay lại!" />
+      ) : (
+        <div className="course-grid">
+          {catalog.map((course, index) => (
+            <CourseCardTile
+              course={course}
+              index={index}
+              enrolled={false}
+              onEnroll={(courseId) => {
+                setEnrolling(courseId);
+                enrollMutation.mutate(courseId);
+              }}
+              enrolling={enrolling === course.id ? true : false}
+            />
+          ))}
+        </div>
+      )}
+
+      <SectionHeading eyebrow="How it works" title="One path, four skills" description="Every unit moves from noticing to practice to review." />
+      <div className="course-flow">
+        <span><BookOpen size={17} /> Learn</span>
+        <ArrowRight size={15} />
+        <span><CheckCircle2 size={17} /> Practice</span>
+        <ArrowRight size={15} />
+        <span><Sparkles size={17} /> Reflect</span>
+        <ArrowRight size={15} />
+        <span><GraduationCap size={17} /> Progress</span>
+      </div>
+    </div>
+  );
+}
+
+function CourseCardTile({
+  course,
+  index,
+  enrolled,
+  onEnroll,
+  enrolling,
+}: {
+  course: CourseCard;
+  index: number;
+  enrolled: boolean;
+  onEnroll?: (courseId: string) => void;
+  enrolling?: boolean;
+}) {
+  const progressPercent = Math.round(course.progress * 100);
+  return (
+    <article className={cn("course-card", index % 2 ? "course-card-lilac" : "course-card-blue")} key={course.id}>
+      <div className="course-card-top">
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <Badge tone={index % 2 ? "purple" : "blue"}>{course.cefr}</Badge>
+          <span style={{ fontSize: 15 }}>{course.flag_emoji}</span>
+        </div>
+        <span className="course-progress-label">
+          {enrolled ? (progressPercent > 0 ? `${progressPercent}% complete` : "Just started") : `${course.enrollment_count} learners`}
+        </span>
+      </div>
+      <div className="course-illustration"><div className="course-orb" /><Layers3 size={36} strokeWidth={1.3} /></div>
+      <h2>{course.title}</h2>
+      <p>{course.description}</p>
+      {course.instructor_name ? (
+        <p style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--muted)", fontSize: 12, margin: "-6px 0 8px" }}>
+          <UserRound size={13} /> {course.instructor_name}
+        </p>
+      ) : null}
+      <div className="course-meta">
+        <span><BookOpen size={14} /> {course.lesson_count} lessons</span>
+        <span><Clock3 size={14} /> {Math.max(1, Math.round(course.duration_minutes / 60))} hours</span>
+      </div>
+      {enrolled ? (
+        <div style={{ marginBottom: 12 }}>
+          <ProgressBar value={progressPercent} tone={index % 2 ? "purple" : "primary"} label="course progress" />
+          <small className="course-progress-label" style={{ marginTop: 4, display: "block" }}>
+            {course.completed_lessons}/{course.lesson_count} lessons done
+          </small>
+        </div>
+      ) : null}
+      <div className="course-card-footer">
+        <div className="course-avatar-stack">
+          <span>{(course.instructor_name || "L").slice(0, 1).toUpperCase()}</span>
+          <span>+</span>
+        </div>
+        {enrolled ? (
+          <Link href={`/app/courses/${course.slug}`} className="button button-dark">Continue <ArrowRight size={15} /></Link>
+        ) : (
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" className="button button-primary" disabled={enrolling} onClick={() => onEnroll?.(course.id)}>
+              {enrolling ? "Joining…" : "Enroll"} <CheckCircle2 size={15} />
+            </button>
+            <Link href={`/app/courses/${course.slug}`} className="button button-secondary">Preview</Link>
+          </div>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function CatalogSkeleton() {
   return <div className="workspace-page"><Skeleton className="skeleton-title" /><Skeleton className="skeleton-lede" /><Skeleton className="skeleton-collection" /><div className="topic-grid">{Array.from({ length: 6 }).map((_, index) => <Skeleton className="skeleton-topic" key={index} />)}</div></div>;
+}
+
+export function EnrolledMiniList() {
+  const query = useQuery({ queryKey: ["enrollments"], queryFn: api.myCourses });
+  if (query.isLoading || query.isError) return null;
+  const mine = query.data ?? [];
+  if (mine.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {mine.slice(0, 4).map((course) => (
+        <Link href={`/app/courses/${course.slug}`} className="path-card" key={course.id} style={{ padding: "10px 12px" }}>
+          <Circle size={14} style={{ color: course.progress > 0 ? "var(--success)" : "var(--muted)" }} />
+          <span style={{ fontWeight: 650 }}>{course.title}</span>
+          <small style={{ marginLeft: "auto", color: "var(--muted)" }}>{Math.round(course.progress * 100)}%</small>
+        </Link>
+      ))}
+    </div>
+  );
 }

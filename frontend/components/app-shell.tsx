@@ -18,6 +18,7 @@ import {
   Menu,
   Mic2,
   NotebookPen,
+  PanelLeftClose,
   PencilLine,
   Search,
   Settings,
@@ -34,6 +35,16 @@ import { useAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; shortcut?: string };
+
+const SIDEBAR_STATE_KEY = "lingua.sidebar";
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STATE_KEY) === "collapsed";
+  } catch {
+    return false;
+  }
+}
 
 const primaryNav: NavItem[] = [
   { href: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -54,10 +65,16 @@ const secondaryNav: NavItem[] = [
   { href: "/app/notebook", label: "Notebook", icon: NotebookPen },
 ];
 
-function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate: () => void }) {
+function NavLink({ item, active, collapsed, onNavigate }: { item: NavItem; active: boolean; collapsed: boolean; onNavigate: () => void }) {
   const Icon = item.icon;
   return (
-    <Link href={item.href} onClick={onNavigate} className={cn("nav-link", active && "nav-link-active")}>
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={cn("nav-link", active && "nav-link-active")}
+      title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
+    >
       <Icon size={17} strokeWidth={active ? 2.4 : 1.9} />
       <span>{t(`nav.${item.label === "AI Tutor" ? "aiTutor" : item.label.toLowerCase()}`)}</span>
       {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
@@ -74,10 +91,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState({ code: "en", flag: "🇬🇧", label: "English" });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { notify } = useActionFeedback();
   const { status: authStatus, user, logout } = useAuth();
   const isActive = (href: string) => href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   const close = () => setMobileOpen(false);
+
+  useEffect(() => {
+    setCollapsed(readSidebarCollapsed());
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDEBAR_STATE_KEY, next ? "collapsed" : "expanded");
+      } catch {
+        // Storage can be unavailable in private mode; the toggle still works.
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -107,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <div className="auth-gate flex flex-col items-center justify-center gap-4 min-h-screen">
         <LogoMark size="lg" animated={true} />
-        <p className="text-sm font-medium text-slate-500 animate-pulse">
+        <p className="text-sm font-medium text-[var(--muted)] animate-pulse">
           {authStatus === "loading" ? "Đang chuẩn bị không gian học tập của bạn…" : "Đang chuyển đến màn hình đăng nhập…"}
         </p>
       </div>
@@ -117,15 +151,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const avatarLetter = user.first_name.trim().slice(0, 1).toUpperCase() || "L";
 
   return (
-    <div className="app-frame">
+    <div className={cn("app-frame", collapsed && "sidebar-collapsed")}>
       <aside className={cn("app-sidebar", mobileOpen && "app-sidebar-open")}>
         <div className="sidebar-brand flex items-center justify-between">
-          <Logo size="sm" href="/" onClick={close} animated={true} />
+          <Logo size="sm" href="/" onClick={close} animated={true} showText={!collapsed} />
           <button type="button" className="sidebar-close icon-button" onClick={close} aria-label="Close navigation"><X size={18} /></button>
         </div>
 
         <div className="language-switcher-wrap">
-          <button type="button" className="language-switcher" onClick={() => setLanguageOpen((value) => !value)} aria-expanded={languageOpen} aria-haspopup="menu">
+          <button
+            type="button"
+            className="language-switcher"
+            onClick={() => setLanguageOpen((value) => !value)}
+            aria-expanded={languageOpen}
+            aria-haspopup="menu"
+            title={collapsed ? selectedLanguage.label : undefined}
+          >
             <span className="language-flag">{selectedLanguage.flag}</span>
             <span><small>Learning</small><strong>{selectedLanguage.label}</strong></span>
             <ChevronDown size={15} />
@@ -139,24 +180,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <nav className="sidebar-nav" aria-label="Primary navigation">
           <p className="nav-label">Workspace</p>
-          {primaryNav.map((item) => <NavLink key={item.href} item={item} active={isActive(item.href)} onNavigate={close} />)}
+          {primaryNav.map((item) => <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} onNavigate={close} />)}
           <p className="nav-label nav-label-spaced">Personal</p>
-          {secondaryNav.map((item) => <NavLink key={item.href} item={item} active={isActive(item.href)} onNavigate={close} />)}
+          {secondaryNav.map((item) => <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} onNavigate={close} />)}
         </nav>
 
         <div className="sidebar-bottom">
-          <Link href="/app/settings" onClick={close} className={cn("nav-link", isActive("/app/settings") && "nav-link-active")}><Settings size={17} /><span>{t("nav.settings")}</span></Link>
-          <Link href="/help" onClick={close} className="nav-link"><CircleHelp size={17} /><span>Help center</span></Link>
-          <button type="button" className="profile-mini" onClick={() => router.push("/app/settings")} aria-label="Open profile settings">
+          {user.role === "instructor" || user.role === "admin" ? (
+            <div className="ws-switcher" role="group" aria-label="Switch workspace">
+              <span className="ws-switcher-item ws-switcher-item-active" title={collapsed ? "Learning" : undefined}><BookOpen size={15} /><span>Learning</span></span>
+              <Link href="/instructor" className="ws-switcher-item" title={collapsed ? "Studio" : undefined}><Mic2 size={15} /><span>Studio</span></Link>
+              {user.role === "admin" ? <Link href="/admin" className="ws-switcher-item" title={collapsed ? "Admin" : undefined}><Settings size={15} /><span>Admin</span></Link> : <span className="ws-switcher-item" style={{ opacity: 0.35 }}><Settings size={15} /><span>Admin</span></span>}
+            </div>
+          ) : null}
+          <Link href="/app/settings" onClick={close} title={collapsed ? "Settings" : undefined} className={cn("nav-link", isActive("/app/settings") && "nav-link-active")}><Settings size={17} /><span>{t("nav.settings")}</span></Link>
+          <Link href="/help" onClick={close} title={collapsed ? "Help center" : undefined} className="nav-link"><CircleHelp size={17} /><span>Help center</span></Link>
+          <button type="button" className="profile-mini" onClick={() => router.push("/app/settings")} aria-label="Open profile settings" title={collapsed ? user.first_name : undefined}>
             <span className="avatar avatar-small">{avatarLetter}</span>
             <span><strong>{user.first_name}</strong><small>{user.email}</small></span>
             <ChevronDown size={14} />
           </button>
-          <button type="button" className="nav-link nav-link-button auth-signout" onClick={() => { void logout(); close(); }}><LogOut size={17} /><span>Sign out</span></button>
+          <button type="button" className="nav-link nav-link-button auth-signout" title={collapsed ? "Sign out" : undefined} onClick={() => { void logout(); close(); }}><LogOut size={17} /><span>Sign out</span></button>
         </div>
       </aside>
 
       {mobileOpen ? <button className="sidebar-scrim" aria-label="Close navigation" onClick={close} /> : null}
+
+      <button
+        type="button"
+        className="sidebar-split-toggle"
+        onClick={toggleCollapsed}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+        title={collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+      >
+        <PanelLeftClose size={16} />
+      </button>
 
       <main className="app-main">
         <header className="app-topbar">

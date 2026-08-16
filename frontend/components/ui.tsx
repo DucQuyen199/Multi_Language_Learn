@@ -38,8 +38,8 @@ export function StatCard({ icon: Icon, label, value, meta, tone = "blue" }: { ic
   );
 }
 
-export function Skeleton({ className = "" }: { className?: string }) {
-  return <span className={cn("skeleton", className)} aria-hidden="true" />;
+export function Skeleton({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+  return <span className={cn("skeleton", className)} style={style} aria-hidden="true" />;
 }
 
 export function EmptyState({ icon: Icon, title, description, action, children }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode; children?: React.ReactNode }) {

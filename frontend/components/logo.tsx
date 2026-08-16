@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { cn } from "@/components/ui";
 
@@ -14,6 +13,8 @@ interface LogoMarkProps {
   className?: string;
 }
 
+// Simple flat mark: a blue rounded badge with a speech bubble and three
+// typing dots — one shape, one accent, readable down to favicon size.
 export function LogoMark({
   size = "md",
   variant = "default",
@@ -28,8 +29,11 @@ export function LogoMark({
     xl: 60,
   }[size];
 
-  // Unique ID prefix for gradients to prevent SVG clashes when multiple logos are rendered
-  const id = React.useId().replace(/:/g, "");
+  const badgeFill =
+    variant === "monochrome" ? "currentColor" : variant === "light" ? "#FFFFFF" : "#2563EB";
+  const bubbleFill = variant === "monochrome" ? "var(--paper)" : variant === "light" ? "#2563EB" : "#FFFFFF";
+  const dotFill =
+    variant === "monochrome" ? "currentColor" : variant === "light" ? "#FFFFFF" : "#2563EB";
 
   return (
     <div
@@ -49,115 +53,12 @@ export function LogoMark({
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full transform transition-transform duration-300 hover:scale-105"
       >
-        <defs>
-          {/* Primary Gradient: Classic Royal Blue to Deep Sapphire */}
-          <linearGradient id={`${id}-grad-primary`} x1="10%" y1="10%" x2="90%" y2="90%">
-            <stop offset="0%" stopColor="#1E40AF" />
-            <stop offset="50%" stopColor="#2563EB" />
-            <stop offset="100%" stopColor="#3B82F6" />
-          </linearGradient>
-
-          {/* Accent Gradient: Subtle Cyan to Classic Emerald */}
-          <linearGradient id={`${id}-grad-accent`} x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0284C7" />
-            <stop offset="50%" stopColor="#059669" />
-            <stop offset="100%" stopColor="#10B981" />
-          </linearGradient>
-
-          {/* Warm Spark Gradient: Refined Amber */}
-          <linearGradient id={`${id}-grad-spark`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#D97706" />
-            <stop offset="100%" stopColor="#F59E0B" />
-          </linearGradient>
-
-          {/* Glass Highlight */}
-          <linearGradient id={`${id}-grad-sheen`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.03" />
-          </linearGradient>
-
-          {/* Ambient Glow Filter */}
-          <filter id={`${id}-glow`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-
-        {/* Ambient Backing Glow */}
-        <circle cx="50" cy="50" r="42" fill={`url(#${id}-grad-primary)`} opacity="0.14" filter={`url(#${id}-glow)`} />
-
-        {/* Base Rounded Shield */}
-        <rect
-          x="6"
-          y="6"
-          width="88"
-          height="88"
-          rx="24"
-          fill={variant === "light" ? "rgba(255,255,255,0.12)" : "url(#" + id + "-grad-primary)"}
-          className="transition-all duration-300"
-        />
-
-        {/* Inner Border */}
-        <rect
-          x="7"
-          y="7"
-          width="86"
-          height="86"
-          rx="23"
-          stroke="#FFFFFF"
-          strokeWidth="1.2"
-          fill="none"
-          strokeOpacity="0.25"
-          strokeLinecap="round"
-        />
-
-        {/* Specular Sheen */}
-        <path
-          d="M7 32C7 18.1929 18.1929 7 32 7H68C72.5 7 76.5 8.5 80 11C60 16 35 32 20 60C12 48 7 40 7 32Z"
-          fill={`url(#${id}-grad-sheen)`}
-        />
-
-        {/* Global Meridian Ribbons - Language Atlas Wave */}
-        {/* Left Speech & Atlas Loop */}
-        <path
-          d="M28 50C28 36 38 24 52 24C66 24 76 34 76 48C76 60 66 70 52 70C46 70 41 68 37 64L24 73L27 60C25 57 24 53.5 24 50"
-          stroke="#FFFFFF"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-          opacity="0.25"
-        />
-
-        {/* Dynamic Forward Arc: Communication / Polyglot Bridge */}
-        <path
-          d="M32 64C36.5 68 43 71 50 71C63.2548 71 74 60.2548 74 47C74 34.5 64.5 24.5 52 24"
-          stroke={`url(#${id}-grad-accent)`}
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Ascending Knowledge Curve */}
-        <path
-          d="M26 48C26 34.7452 36.7452 24 50 24C57 24 63.5 27 68 32"
-          stroke="#FFFFFF"
-          strokeWidth="5"
-          strokeLinecap="round"
-          opacity="0.95"
-        />
-
-        {/* Inner Atlas Grid Lines (Subtle latitude/longitude) */}
-        <ellipse cx="50" cy="47.5" rx="14" ry="22.5" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="3 3" strokeOpacity="0.4" fill="none" />
-        <line x1="28" y1="47.5" x2="72" y2="47.5" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="3 3" strokeOpacity="0.4" />
-
-        {/* Core Polyglot Spark / AI Intelligence Nexus */}
-        <g className={animated ? "logo-spark-pulse" : ""}>
-          <circle cx="68" cy="32" r="5.5" fill={`url(#${id}-grad-spark)`} />
-          <circle cx="68" cy="32" r="8" stroke="#FDE68A" strokeWidth="1.5" opacity="0.75" />
-          <circle cx="32" cy="62" r="3.5" fill="#34D399" />
-          <circle cx="50" cy="47.5" r="4" fill="#FFFFFF" />
-        </g>
+        <rect x="6" y="6" width="88" height="88" rx="26" fill={badgeFill} />
+        <path d="M36 62 L30 80 L52 62 Z" fill={bubbleFill} />
+        <rect x="22" y="22" width="56" height="42" rx="14" fill={bubbleFill} />
+        <circle className={animated ? "logo-dot" : undefined} cx="37" cy="43" r="5" fill={dotFill} />
+        <circle className={animated ? "logo-dot" : undefined} cx="50" cy="43" r="5" fill={dotFill} />
+        <circle className={animated ? "logo-dot" : undefined} cx="63" cy="43" r="5" fill={dotFill} />
       </svg>
     </div>
   );

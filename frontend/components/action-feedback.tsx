@@ -1,9 +1,9 @@
 "use client";
 
-import { CheckCircle2, Info, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { createContext, useCallback, useContext, useState } from "react";
 
-type FeedbackTone = "success" | "info";
+type FeedbackTone = "success" | "info" | "error";
 type FeedbackItem = { id: number; message: string; tone: FeedbackTone };
 type FeedbackContextValue = { notify: (message: string, tone?: FeedbackTone) => void };
 
@@ -23,8 +23,8 @@ export function ActionFeedbackProvider({ children }: { children: React.ReactNode
       {children}
       <div className="action-toasts" aria-live="polite" aria-atomic="true">
         {items.map((item) => (
-          <div className="action-toast" key={item.id}>
-            {item.tone === "success" ? <CheckCircle2 size={16} /> : <Info size={16} />}
+          <div className={item.tone === "error" ? "action-toast action-toast-error" : "action-toast"} key={item.id}>
+            {item.tone === "success" ? <CheckCircle2 size={16} /> : item.tone === "error" ? <AlertCircle size={16} /> : <Info size={16} />}
             <span>{item.message}</span>
             <button type="button" className="toast-dismiss" onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} aria-label="Dismiss notification">
               <X size={14} />

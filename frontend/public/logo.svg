@@ -1,53 +1,9 @@
-<svg width="340" height="80" viewBox="0 0 340 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="full-grad-primary" x1="10%" y1="10%" x2="90%" y2="90%">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="50%" stop-color="#3B82F6" />
-      <stop offset="100%" stop-color="#8B5CF6" />
-    </linearGradient>
-    <linearGradient id="full-grad-accent" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#06B6D4" />
-      <stop offset="50%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#34D399" />
-    </linearGradient>
-    <linearGradient id="full-grad-spark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#EF4444" />
-    </linearGradient>
-    <linearGradient id="full-grad-badge" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6" />
-      <stop offset="100%" stop-color="#4F46E5" />
-    </linearGradient>
-    <linearGradient id="full-grad-sheen" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.05" />
-    </linearGradient>
-  </defs>
-
-  <!-- Mark Section -->
-  <g transform="translate(4, 8) scale(0.64)">
-    <rect x="6" y="6" width="88" height="88" rx="26" fill="url(#full-grad-primary)" />
-    <rect x="7" y="7" width="86" height="86" rx="25" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-opacity="0.3" stroke-linecap="round" />
-    <path d="M7 32C7 18.1929 18.1929 7 32 7H68C72.5 7 76.5 8.5 80 11C60 16 35 32 20 60C12 48 7 40 7 32Z" fill="url(#full-grad-sheen)" />
-    <path d="M28 50C28 36 38 24 52 24C66 24 76 34 76 48C76 60 66 70 52 70C46 70 41 68 37 64L24 73L27 60C25 57 24 53.5 24 50" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.25" />
-    <path d="M32 64C36.5 68 43 71 50 71C63.2548 71 74 60.2548 74 47C74 34.5 64.5 24.5 52 24" stroke="url(#full-grad-accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M26 48C26 34.7452 36.7452 24 50 24C57 24 63.5 27 68 32" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.95" />
-    <ellipse cx="50" cy="47.5" rx="14" ry="22.5" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 3" stroke-opacity="0.4" fill="none" />
-    <line x1="28" y1="47.5" x2="72" y2="47.5" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 3" stroke-opacity="0.4" />
-    <circle cx="68" cy="32" r="5.5" fill="url(#full-grad-spark)" />
-    <circle cx="68" cy="32" r="8" stroke="#FDE68A" stroke-width="1.5" opacity="0.75" />
-    <circle cx="32" cy="62" r="3.5" fill="#34D399" />
-    <circle cx="50" cy="47.5" r="4" fill="#FFFFFF" />
-  </g>
-
-  <!-- Typography Section -->
-  <!-- Lingua Text -->
-  <text x="82" y="44" fill="#0F172A" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="28" letter-spacing="-0.04em">Lingua</text>
-
-  <!-- Atlas Badge -->
-  <rect x="180" y="24" width="76" height="24" rx="6" fill="url(#full-grad-badge)" />
-  <text x="218" y="41" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="12.5" letter-spacing="0.12em" text-anchor="middle">ATLAS</text>
-
-  <!-- Subtitle / Tagline -->
-  <text x="84" y="61" fill="#64748B" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="9" letter-spacing="0.24em">MULTI-LANGUAGE LEARN</text>
+<svg width="260" height="100" viewBox="0 0 260 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="6" y="6" width="88" height="88" rx="26" fill="#2563EB"/>
+  <path d="M36 62 L30 80 L52 62 Z" fill="#FFFFFF"/>
+  <rect x="22" y="22" width="56" height="42" rx="14" fill="#FFFFFF"/>
+  <circle cx="37" cy="43" r="5" fill="#2563EB"/>
+  <circle cx="50" cy="43" r="5" fill="#2563EB"/>
+  <circle cx="63" cy="43" r="5" fill="#2563EB"/>
+  <text x="110" y="55" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" letter-spacing="-1" fill="#0F172A">Lingua<tspan font-weight="600" fill="#2563EB">Atlas</tspan></text>
 </svg>

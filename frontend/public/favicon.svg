@@ -1,18 +1,8 @@
 <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="fav-grad" x1="10%" y1="10%" x2="90%" y2="90%">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="50%" stop-color="#3B82F6" />
-      <stop offset="100%" stop-color="#8B5CF6" />
-    </linearGradient>
-    <linearGradient id="fav-accent" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#06B6D4" />
-      <stop offset="100%" stop-color="#10B981" />
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="92" height="92" rx="26" fill="url(#fav-grad)" />
-  <path d="M32 64C36.5 68 43 71 50 71C63.2548 71 74 60.2548 74 47C74 34.5 64.5 24.5 52 24" stroke="url(#fav-accent)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M26 48C26 34.7452 36.7452 24 50 24C57 24 63.5 27 68 32" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
-  <circle cx="68" cy="32" r="7" fill="#F59E0B" />
-  <circle cx="50" cy="48" r="5" fill="#FFFFFF" />
+  <rect x="6" y="6" width="88" height="88" rx="26" fill="#2563EB"/>
+  <path d="M36 62 L30 80 L52 62 Z" fill="#FFFFFF"/>
+  <rect x="22" y="22" width="56" height="42" rx="14" fill="#FFFFFF"/>
+  <circle cx="37" cy="43" r="5" fill="#2563EB"/>
+  <circle cx="50" cy="43" r="5" fill="#2563EB"/>
+  <circle cx="63" cy="43" r="5" fill="#2563EB"/>
 </svg>
