@@ -76,7 +76,7 @@ export default function InstructorOverviewScreen() {
             <View>
               <SectionHeading title="Học viên mới nhất" />
               {data.recent_students.slice(0, 4).map((s) => (
-                <Card key={s.id} className="flex-row items-center gap-3 mb-2.5">
+                <Card key={`${s.id}-${s.course_id}`} className="flex-row items-center gap-3 mb-2.5">
                   <View className="w-9 h-9 rounded-full bg-primary-soft items-center justify-center">
                     <Text className="text-primary font-bold text-sm">{s.name.charAt(0)}</Text>
                   </View>

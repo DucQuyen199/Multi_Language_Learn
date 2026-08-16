@@ -26,7 +26,7 @@ export default function InstructorStudentsScreen() {
 
       <FlatList
         data={students}
-        keyExtractor={(s) => s.id}
+        keyExtractor={(s) => `${s.id}-${s.course_id}`}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 10, flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         ListEmptyComponent={
