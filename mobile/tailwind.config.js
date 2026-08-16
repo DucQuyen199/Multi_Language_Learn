@@ -1,0 +1,45 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./global.css",
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  presets: [require("nativewind/preset")],
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        ink: "var(--color-ink)",
+        navy: "var(--color-navy)",
+        muted: "var(--color-muted)",
+        "muted-strong": "var(--color-muted-strong)",
+        line: "var(--color-line)",
+        canvas: "var(--color-canvas)",
+        paper: "var(--color-paper)",
+        primary: "var(--color-primary)",
+        "primary-soft": "var(--color-primary-soft)",
+        success: "var(--color-success)",
+        "success-strong": "var(--color-success-strong)",
+        "success-on": "var(--color-success-on)",
+        "success-soft": "var(--color-success-soft)",
+        warning: "var(--color-warning)",
+        "warning-on": "var(--color-warning-on)",
+        "warning-soft": "var(--color-warning-soft)",
+        danger: "var(--color-danger)",
+        "danger-strong": "var(--color-danger-strong)",
+        "danger-on": "var(--color-danger-on)",
+        "danger-soft": "var(--color-danger-soft)",
+        purple: "var(--color-purple)",
+        "purple-soft": "var(--color-purple-soft)",
+        orange: "var(--color-orange)",
+        "orange-soft": "var(--color-orange-soft)",
+      },
+      borderRadius: {
+        md: "10px",
+        lg: "14px",
+      },
+    },
+  },
+  plugins: [],
+};
